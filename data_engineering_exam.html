@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Engineering & Analytics — Lab Exam</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --cyan: #00cfff;
+    --accent: #7b5ea7;
+    --red: #ff3860;
+    --orange: #ff8800;
+    --bg: #04080f;
+    --panel: #080f1c;
+    --panel2: #0c1626;
+    --border: #0e2040;
+    --text: #c0d4f0;
+    --dim: #3a5070;
+    --green: #00e6a0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,207,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,207,255,0.025) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── LOCKSCREEN ── */
+  #lockscreen {
+    position: fixed; inset: 0;
+    background: rgba(4,8,15,0.97);
+    z-index: 9999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(10px);
+  }
+  #lockscreen.hidden { display: none; }
+
+  .lock-ring {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    border: 3px solid var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    animation: pulse-ring 2s infinite;
+    margin-bottom: 24px;
+    box-shadow: 0 0 30px rgba(255,56,96,0.3);
+  }
+  @keyframes pulse-ring {
+    0%,100% { box-shadow: 0 0 20px rgba(255,56,96,0.3); }
+    50% { box-shadow: 0 0 50px rgba(255,56,96,0.6); }
+  }
+  .lock-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px; color: var(--red);
+    letter-spacing: 5px; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .lock-reason {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--dim);
+    margin-bottom: 32px;
+  }
+  .lock-input-wrap { display: flex; gap: 10px; align-items: center; }
+  #lockPassword {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    padding: 10px 16px;
+    width: 240px; outline: none;
+    letter-spacing: 3px;
+    transition: border-color 0.2s;
+  }
+  #lockPassword:focus { border-color: var(--cyan); }
+  #lockPassword.wrong { border-color: var(--red); animation: shake 0.4s; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}
+  }
+  .unlock-btn {
+    background: var(--cyan); color: #000;
+    border: none; border-radius: 4px;
+    padding: 10px 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 14px;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .unlock-btn:hover { opacity: 0.85; }
+  #lockError {
+    margin-top: 14px; color: var(--red);
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    height: 20px;
+  }
+
+  /* ── IDLE BAR ── */
+  #idleBar {
+    position: fixed; top: 0; left: 0;
+    height: 3px; background: var(--cyan);
+    transition: width 1s linear, background 0.5s;
+    z-index: 8888;
+  }
+  #idleWarning {
+    position: fixed; bottom: 70px; right: 20px;
+    background: #1a0e00;
+    border: 1px solid var(--orange);
+    color: var(--orange);
+    padding: 10px 18px; border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; z-index: 8889;
+    display: none; animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── STUDENT FORM ── */
+  #studentForm {
+    position: fixed; inset: 0;
+    background: rgba(4,8,15,0.98);
+    z-index: 9998;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sf-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 44px; width: 460px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(0,207,255,0.05);
+  }
+  .sf-badge {
+    display: inline-block;
+    background: rgba(0,207,255,0.08);
+    border: 1px solid rgba(0,207,255,0.2);
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 3px;
+    padding: 4px 14px; border-radius: 20px;
+    margin-bottom: 14px; text-transform: uppercase;
+  }
+  .sf-title {
+    font-size: 26px; font-weight: 700;
+    color: #fff; letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .sf-sub {
+    font-size: 12px; color: var(--dim);
+    margin-bottom: 30px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .sf-field {
+    display: flex; flex-direction: column;
+    text-align: left; margin-bottom: 16px;
+  }
+  .sf-field label {
+    font-size: 11px; color: var(--dim);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .sf-field input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px; padding: 10px 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .sf-field input:focus { border-color: var(--cyan); }
+  .start-btn {
+    width: 100%; background: var(--cyan); color: #000;
+    border: none; border-radius: 4px; padding: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 15px;
+    cursor: pointer; margin-top: 10px;
+    letter-spacing: 2px; transition: opacity 0.2s;
+  }
+  .start-btn:hover { opacity: 0.85; }
+
+  /* ── SCREEN RECORD MODAL ── */
+  #recordModal {
+    position: fixed; inset: 0;
+    background: rgba(4,8,15,0.96);
+    z-index: 9997;
+    display: none;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+  }
+  #recordModal.show { display: flex; }
+  .rm-box {
+    background: var(--panel);
+    border: 1px solid var(--orange);
+    border-radius: 10px;
+    padding: 44px; width: 480px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(255,136,0,0.08);
+  }
+  .rm-icon { font-size: 52px; margin-bottom: 16px; }
+  .rm-title {
+    font-size: 22px; font-weight: 700;
+    color: var(--orange); letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+  .rm-desc {
+    font-size: 14px; color: var(--dim);
+    margin-bottom: 28px; line-height: 1.7;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .rm-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--green);
+    margin-bottom: 20px; height: 20px;
+  }
+  .rm-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .rm-btn-start {
+    background: var(--orange); color: #000;
+    border: none; border-radius: 4px;
+    padding: 11px 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 14px;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .rm-btn-start:hover { opacity: 0.85; }
+  .rm-btn-skip {
+    background: transparent;
+    border: 1px solid var(--dim);
+    color: var(--dim);
+    border-radius: 4px;
+    padding: 11px 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .rm-btn-skip:hover { border-color: var(--text); color: var(--text); }
+  .rm-btn-stop {
+    background: var(--red); color: #fff;
+    border: none; border-radius: 4px;
+    padding: 11px 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 14px;
+    cursor: pointer; display: none;
+    transition: opacity 0.2s;
+  }
+  .rm-btn-stop:hover { opacity: 0.85; }
+
+  /* ── RECORDING INDICATOR ── */
+  #recIndicator {
+    display: none;
+    align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--red);
+  }
+  #recIndicator.active { display: flex; }
+  .rec-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%; background: var(--red);
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* ── HEADER ── */
+  header {
+    position: relative; z-index: 10;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 40px;
+    display: flex; align-items: center;
+    justify-content: space-between;
+  }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-icon { font-size: 26px; }
+  .logo-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px; font-weight: 700;
+    color: var(--cyan); letter-spacing: 2px;
+  }
+  .logo-sub {
+    font-size: 10px; color: var(--dim);
+    letter-spacing: 3px; text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .header-right { display: flex; align-items: center; gap: 20px; }
+  .student-info {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--dim);
+  }
+  #studentNameDisplay {
+    color: var(--cyan); font-size: 13px;
+    font-weight: 700; display: block;
+  }
+
+  /* ── EXAM AREA ── */
+  #examArea {
+    position: relative; z-index: 1;
+    max-width: 920px; margin: 0 auto;
+    padding: 40px 24px 90px;
+  }
+  .exam-header-bar {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px; padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .exam-title {
+    font-size: 24px; font-weight: 700;
+    color: var(--cyan); letter-spacing: 2px;
+  }
+  .exam-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--dim); text-align: right;
+  }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 22px;
+    overflow: hidden; transition: border-color 0.3s;
+  }
+  .q-card:focus-within { border-color: rgba(0,207,255,0.3); }
+  .q-header {
+    display: flex; align-items: flex-start;
+    gap: 14px; padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel2);
+  }
+  .q-num {
+    background: rgba(0,207,255,0.08);
+    border: 1px solid rgba(0,207,255,0.18);
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 3px;
+    white-space: nowrap; margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .q-text {
+    font-size: 16px; font-weight: 600;
+    color: #dceeff; line-height: 1.55;
+  }
+  .q-body { padding: 16px 22px; }
+  .q-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--dim);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; padding: 12px 16px;
+    resize: vertical; min-height: 100px;
+    outline: none; line-height: 1.7;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: rgba(0,207,255,0.35); }
+
+  /* ── SAVE BAR ── */
+  .save-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 12px 40px;
+    display: flex; align-items: center;
+    justify-content: space-between; z-index: 100;
+  }
+  .save-info {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--dim);
+  }
+  .bar-actions { display: flex; gap: 12px; align-items: center; }
+  .pdf-btn {
+    background: transparent;
+    border: 1px solid var(--cyan); color: var(--cyan);
+    border-radius: 4px; padding: 9px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 13px;
+    cursor: pointer; letter-spacing: 1px;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pdf-btn:hover { background: var(--cyan); color: #000; }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: #fff !important; color: #000 !important; }
+    body::before { display: none; }
+    header, #lockscreen, #studentForm, #recordModal,
+    .save-bar, #idleBar, #idleWarning { display: none !important; }
+    #examArea { max-width: 100%; padding: 0; }
+    .q-card { border: 1px solid #ccc !important; background: #fff !important; page-break-inside: avoid; margin-bottom: 18px; }
+    .q-header { border-bottom: 1px solid #eee !important; background: #f4f8ff !important; }
+    .q-num { background: #e8f0ff !important; border: 1px solid #a0b8e0 !important; color: #003399 !important; }
+    .q-text { color: #111 !important; }
+    .q-label { color: #666 !important; }
+    textarea { border: 1px solid #ddd !important; background: #fafafa !important; color: #222 !important; min-height: auto; height: auto; resize: none; }
+    .exam-header-bar { border-bottom: 2px solid #003399 !important; }
+    .exam-title { color: #003399 !important; }
+    .exam-meta { color: #444 !important; }
+    .pdf-header-print { display: block !important; text-align: center; padding: 20px 0 28px; border-bottom: 2px solid #003399; margin-bottom: 28px; }
+    .pdf-student-block { background: #eef4ff; border: 1px solid #a0b8e0; border-radius: 6px; padding: 14px 20px; margin-bottom: 28px; }
+  }
+  .pdf-header-print { display: none; }
+</style>
+</head>
+<body>
+
+<div id="idleBar" style="width:100%"></div>
+<div id="idleWarning">⚠ No activity detected — locking soon...</div>
+
+<!-- ── STUDENT FORM ── -->
+<div id="studentForm">
+  <div class="sf-box">
+    <div class="sf-badge">// secure assessment portal</div>
+    <div class="sf-title">📊 LAB EXAM</div>
+    <div class="sf-sub">DATA ENGINEERING &amp; ANALYTICS MODULE</div>
+    <div class="sf-field">
+      <label>Full Name</label>
+      <input type="text" id="sfName" placeholder="Your full name" />
+    </div>
+    <div class="sf-field">
+      <label>Roll Number / ID</label>
+      <input type="text" id="sfRoll" placeholder="e.g. DE-2024-01" />
+    </div>
+    <div class="sf-field">
+      <label>Date</label>
+      <input type="text" id="sfDate" />
+    </div>
+    <button class="start-btn" onclick="startExam()">BEGIN EXAM →</button>
+  </div>
+</div>
+
+<!-- ── SCREEN RECORD MODAL ── -->
+<div id="recordModal">
+  <div class="rm-box">
+    <div class="rm-icon">🎥</div>
+    <div class="rm-title">SCREEN RECORDING</div>
+    <div class="rm-desc">
+      This exam requires screen recording for integrity verification.<br><br>
+      Click <strong style="color:#ff8800">Start Recording</strong> to begin capturing your screen.
+      Your recording will be automatically saved when the exam ends.
+    </div>
+    <div class="rm-status" id="rmStatus"></div>
+    <div class="rm-btns">
+      <button class="rm-btn-start" id="rmStartBtn" onclick="startRecording()">▶ Start Recording</button>
+      <button class="rm-btn-stop" id="rmStopBtn" onclick="stopAndSaveRecording()">⏹ Stop &amp; Save</button>
+      <button class="rm-btn-skip" onclick="skipRecording()">Skip (Not Recommended)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOCK SCREEN ── -->
+<div id="lockscreen" class="hidden">
+  <div class="lock-ring">🔒</div>
+  <div class="lock-title">EXAM LOCKED</div>
+  <div class="lock-reason" id="lockReason">// Suspicious activity detected</div>
+  <div class="lock-input-wrap">
+    <input type="password" id="lockPassword" placeholder="Enter admin password"
+      onkeydown="if(event.key==='Enter')tryUnlock()" />
+    <button class="unlock-btn" onclick="tryUnlock()">UNLOCK</button>
+  </div>
+  <div id="lockError"></div>
+</div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🗄</div>
+    <div>
+      <div class="logo-text">DATA ENG LAB EXAM</div>
+      <div class="logo-sub">Secure Assessment Portal</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="recIndicator">
+      <div class="rec-dot"></div>
+      REC
+    </div>
+    <div class="student-info">
+      <span id="studentNameDisplay">—</span>
+      <span id="studentRollDisplay"></span>
+    </div>
+  </div>
+</header>
+
+<!-- ── EXAM AREA ── -->
+<div id="examArea">
+  <div class="pdf-header-print">
+    <h1 style="color:#003399;font-size:24px;margin-bottom:6px;">DATA ENGINEERING &amp; ANALYTICS — LAB EXAM</h1>
+    <p style="color:#444;font-size:13px;">Secure Assessment — Submitted Answer Sheet</p>
+  </div>
+  <div class="pdf-student-block" id="pdfStudentBlock" style="display:none">
+    <strong>Name:</strong> <span id="pdfName"></span> &nbsp;&nbsp;
+    <strong>Roll No:</strong> <span id="pdfRoll"></span> &nbsp;&nbsp;
+    <strong>Date:</strong> <span id="pdfDateBlock"></span>
+  </div>
+
+  <div class="exam-header-bar">
+    <div>
+      <div class="exam-title">ANSWER SHEET</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);margin-top:4px;">
+        // Answer all questions in detail
+      </div>
+    </div>
+    <div class="exam-meta">
+      Total Questions: 15<br>
+      <span id="examDate"></span>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 01</span>
+      <div class="q-text">What is the difference between a Data Scientist and a Data Analyst?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a1" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 02</span>
+      <div class="q-text">What is Batch Processing? What are its Characteristics?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a2" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 03</span>
+      <div class="q-text">What are the Key Differences Between Batch and Streaming Data Processing?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a3" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 04</span>
+      <div class="q-text">What is the difference between MySQL and PostgreSQL?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a4" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 05</span>
+      <div class="q-text">What are the Attributes of Indexing and File Organization in Indexing?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a5" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 06</span>
+      <div class="q-text">What are the Key Features of NumPy and how do you install NumPy using pip?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a6" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 07</span>
+      <div class="q-text">What is the difference between CSV and JSON?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a7" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 08</span>
+      <div class="q-text">Explain the ETL Design Pattern and the ELT Design Pattern.</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a8" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 09</span>
+      <div class="q-text">What is a DAG in Apache Airflow? Why must it be acyclic?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a9" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 10</span>
+      <div class="q-text">What is the difference between pulling data from a REST API vs a streaming source like Kafka? When would you choose each?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a10" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 11</span>
+      <div class="q-text">What is the difference between a REST API and a JSON API?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a11" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 12</span>
+      <div class="q-text">Which has higher latency — batch or streaming? Why?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a12" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 13</span>
+      <div class="q-text">What is the difference between Data Lakes and Data Warehouses?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a13" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 14</span>
+      <div class="q-text">What is Cloud Storage? Explain AWS S3 Cloud Storage.</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a14" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header">
+      <span class="q-num">Q 15</span>
+      <div class="q-text">What is Encryption? How does it work?</div>
+    </div>
+    <div class="q-body">
+      <div class="q-label">// Your Answer</div>
+      <textarea id="a15" placeholder="Write your answer here..."></textarea>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SAVE BAR ── -->
+<div class="save-bar">
+  <div class="save-info">// Answers auto-saved in browser session</div>
+  <div class="bar-actions">
+    <button class="pdf-btn" onclick="savePDF()">⬇ SAVE AS PDF</button>
+  </div>
+</div>
+
+<script>
+// ─── PASSWORD (SHA-256 hash of 'aimlbravynex') ────────────────────────────────
+// The actual password is NOT stored here — only its hash.
+const PASS_HASH = 'f318824a426279bb286b5d4f2735cf0f91b3aa2e24756954f54588256fd7c480';
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let examStarted = false;
+let idleSecondsLeft = 20;
+let idleInterval = null;
+const IDLE_LIMIT = 20;
+
+// Recording state
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+let studentName = '';
+let studentRoll = '';
+
+// ─── DATE ─────────────────────────────────────────────────────────────────────
+document.getElementById('sfDate').value = new Date().toLocaleDateString('en-IN',
+  { day: '2-digit', month: 'long', year: 'numeric' });
+
+// ─── START EXAM ───────────────────────────────────────────────────────────────
+function startExam() {
+  const name = document.getElementById('sfName').value.trim();
+  const roll = document.getElementById('sfRoll').value.trim();
+  if (!name || !roll) { alert('Please fill in your name and roll number.'); return; }
+
+  studentName = name;
+  studentRoll = roll;
+
+  document.getElementById('studentNameDisplay').textContent = name;
+  document.getElementById('studentRollDisplay').textContent = '  [' + roll + ']';
+  document.getElementById('examDate').textContent = document.getElementById('sfDate').value;
+  document.getElementById('pdfName').textContent = name;
+  document.getElementById('pdfRoll').textContent = roll;
+  document.getElementById('pdfDateBlock').textContent = document.getElementById('sfDate').value;
+
+  document.getElementById('studentForm').style.display = 'none';
+
+  // Show screen recording modal
+  document.getElementById('recordModal').classList.add('show');
+}
+
+// ─── SCREEN RECORDING ────────────────────────────────────────────────────────
+async function startRecording() {
+  try {
+    document.getElementById('rmStatus').textContent = '⏳ Requesting screen access...';
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { mediaSource: 'screen', cursor: 'always' },
+      audio: false
+    });
+
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      saveRecordingLocally();
+      stream.getTracks().forEach(t => t.stop());
+    };
+
+    // Auto-stop if user stops sharing
+    stream.getVideoTracks()[0].onended = () => {
+      if (isRecording) {
+        isRecording = false;
+        document.getElementById('recIndicator').classList.remove('active');
+      }
+    };
+
+    mediaRecorder.start(1000);
+    isRecording = true;
+
+    document.getElementById('rmStatus').textContent = '✅ Recording started successfully!';
+    document.getElementById('rmStartBtn').style.display = 'none';
+    document.getElementById('rmStopBtn').style.display = 'inline-block';
+    document.getElementById('recIndicator').classList.add('active');
+
+    setTimeout(() => {
+      document.getElementById('recordModal').classList.remove('show');
+      beginExam();
+    }, 1500);
+
+  } catch (err) {
+    document.getElementById('rmStatus').textContent = '⚠ Access denied or not supported. You may skip.';
+    console.warn('Screen capture error:', err);
+  }
+}
+
+function stopAndSaveRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    isRecording = false;
+    document.getElementById('recIndicator').classList.remove('active');
+    document.getElementById('rmStopBtn').style.display = 'none';
+    document.getElementById('rmStartBtn').style.display = 'inline-block';
+    document.getElementById('rmStatus').textContent = '💾 Saving recording...';
+  }
+}
+
+function saveRecordingLocally() {
+  if (recordedChunks.length === 0) return;
+  const blob = new Blob(recordedChunks, { type: 'video/webm' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  a.href = url;
+  a.download = `exam-recording_${studentName.replace(/\s+/g,'-')}_${studentRoll}_${ts}.webm`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  document.getElementById('rmStatus').textContent = '✅ Recording saved to Downloads!';
+}
+
+function skipRecording() {
+  document.getElementById('recordModal').classList.remove('show');
+  beginExam();
+}
+
+function beginExam() {
+  examStarted = true;
+  resetIdle();
+  startIdleWatch();
+}
+
+// ─── LOCK / UNLOCK ────────────────────────────────────────────────────────────
+function lockExam(reason) {
+  if (!examStarted) return;
+  document.getElementById('lockReason').textContent = '// ' + reason;
+  document.getElementById('lockscreen').classList.remove('hidden');
+  document.getElementById('lockPassword').value = '';
+  document.getElementById('lockError').textContent = '';
+  clearIdleTimers();
+  setTimeout(() => document.getElementById('lockPassword').focus(), 100);
+}
+
+async function tryUnlock() {
+  const val = document.getElementById('lockPassword').value;
+  const hash = await sha256(val);
+  if (hash === PASS_HASH) {
+    document.getElementById('lockscreen').classList.add('hidden');
+    document.getElementById('lockPassword').value = '';
+    document.getElementById('lockError').textContent = '';
+    resetIdle();
+    startIdleWatch();
+  } else {
+    const inp = document.getElementById('lockPassword');
+    inp.classList.add('wrong');
+    document.getElementById('lockError').textContent = 'Incorrect password. Try again.';
+    setTimeout(() => inp.classList.remove('wrong'), 500);
+    inp.value = '';
+  }
+}
+
+// ─── VISIBILITY / FOCUS ───────────────────────────────────────────────────────
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && examStarted) lockExam('Tab switch detected');
+});
+window.addEventListener('blur', () => {
+  if (examStarted && !document.getElementById('recordModal').classList.contains('show'))
+    lockExam('Application focus lost — another window opened');
+});
+
+// ─── IDLE ─────────────────────────────────────────────────────────────────────
+function resetIdle() {
+  idleSecondsLeft = IDLE_LIMIT;
+  updateIdleBar();
+  hideIdleWarning();
+}
+function startIdleWatch() {
+  clearIdleTimers();
+  idleInterval = setInterval(() => {
+    if (!examStarted) return;
+    if (document.getElementById('lockscreen').classList.contains('hidden') &&
+        !document.getElementById('recordModal').classList.contains('show')) {
+      idleSecondsLeft--;
+      updateIdleBar();
+      if (idleSecondsLeft <= 6 && idleSecondsLeft > 0) showIdleWarning();
+      if (idleSecondsLeft <= 0) lockExam('No activity for 20 seconds');
+    }
+  }, 1000);
+}
+function clearIdleTimers() {
+  if (idleInterval) clearInterval(idleInterval);
+}
+function updateIdleBar() {
+  const pct = (idleSecondsLeft / IDLE_LIMIT) * 100;
+  const bar = document.getElementById('idleBar');
+  bar.style.width = pct + '%';
+  bar.style.background = idleSecondsLeft <= 6 ? '#ff3860' : '#00cfff';
+}
+function showIdleWarning() {
+  const w = document.getElementById('idleWarning');
+  w.style.display = 'block';
+  w.textContent = `⚠ Locking in ${idleSecondsLeft}s — Move mouse to stay active`;
+}
+function hideIdleWarning() {
+  document.getElementById('idleWarning').style.display = 'none';
+}
+document.addEventListener('mousemove', () => {
+  if (examStarted && document.getElementById('lockscreen').classList.contains('hidden')) resetIdle();
+});
+document.addEventListener('keydown', () => {
+  if (examStarted && document.getElementById('lockscreen').classList.contains('hidden')) resetIdle();
+});
+
+// ─── SAVE PDF ─────────────────────────────────────────────────────────────────
+function savePDF() {
+  document.getElementById('pdfStudentBlock').style.display = 'block';
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.getElementById('pdfStudentBlock').style.display = 'none';
+    }, 1500);
+  }, 100);
+}
+
+// ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
+document.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>
