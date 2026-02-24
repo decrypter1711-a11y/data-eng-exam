@@ -194,22 +194,57 @@ if st.button("🚀 Push HTML to GitHub", key="push_html"):
 
 st.divider()
 
-# ─── SECTION 2: UPLOAD RECORDINGS ────────────────────────────────────────────
+# ─── SECTION 2: UPLOAD RECORDINGS ─────────────────────────────────────────────
 st.markdown("### 🎥 Upload Student Screen Recordings")
-st.markdown("`// Recordings will be saved to: recordings/ folder in your repo`")
+st.markdown("`// Each student gets their own folder: recordings/ROLL_NAME/filename.webm`")
 
 recordings_folder = st.text_input(
-    "Recordings folder in repo",
+    "Base recordings folder in repo",
     value="recordings",
-    help="All recordings will be pushed into this folder"
+    help="Each student gets their own sub-folder inside this"
 )
 
 uploaded_recordings = st.file_uploader(
     "Upload screen recording(s) (.webm / .mp4)",
     type=["webm", "mp4", "mkv"],
     accept_multiple_files=True,
-    help="Upload the .webm recording files downloaded from the exam page"
+    help="Upload .webm files from the exam. Filename format: ROLL__NAME__DATE__TIME.webm"
 )
+
+def parse_recording_filename(fname):
+    base = fname.rsplit('.', 1)[0]
+    parts = base.split('__')
+    if len(parts) == 4:
+        return {
+            'roll': parts[0],
+            'name': parts[1].replace('_', ' '),
+            'date': parts[2],
+            'time': parts[3].replace('-', ':'),
+            'folder': f"{parts[0]}_{parts[1]}"
+        }
+    return None
+
+if uploaded_recordings:
+    st.markdown("**📋 Detected Student Info:**")
+    for rec in uploaded_recordings:
+        info = parse_recording_filename(rec.name)
+        if info:
+            st.markdown(
+                f'<div class="status-box info">' +
+                f'📁 <strong>{rec.name}</strong><br>' +
+                f'👤 Name: <strong>{info["name"]}</strong> &nbsp;|&nbsp; ' +
+                f'🎓 Roll No: <strong>{info["roll"]}</strong> &nbsp;|&nbsp; ' +
+                f'📅 {info["date"]} &nbsp;|&nbsp; 🕐 {info["time"]}<br>' +
+                f'📂 Path: <code>recordings/{info["folder"]}/{rec.name}</code>' +
+                '</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f'<div class="status-box error">⚠ <strong>{rec.name}</strong> — ' +
+                'cannot parse student info. Saving to recordings/unknown/</div>',
+                unsafe_allow_html=True
+            )
 
 commit_msg_rec = st.text_input(
     "Commit message for recordings",
@@ -224,26 +259,39 @@ if st.button("📤 Upload Recordings to GitHub", key="push_recordings"):
     else:
         ok, _ = verify_repo_access(github_token, repo_owner, repo_name)
         if not ok:
-            st.markdown('<div class="status-box error">❌ Cannot access repository. Check your token and repo name.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="status-box error">❌ Cannot access repository.</div>', unsafe_allow_html=True)
         else:
             results = []
             progress = st.progress(0)
             for i, rec_file in enumerate(uploaded_recordings):
                 file_bytes = rec_file.read()
-                target_path = f"{recordings_folder}/{rec_file.name}"
+                info = parse_recording_filename(rec_file.name)
+                student_folder = f"{recordings_folder}/{info['folder']}" if info else f"{recordings_folder}/unknown"
+                target_path = f"{student_folder}/{rec_file.name}"
+                label = f"{info['roll']} — {info['name']}" if info else rec_file.name
+                commit = f"{commit_msg_rec} | {label}"
                 with st.spinner(f"Uploading {rec_file.name}..."):
                     status, resp = push_file_to_github(
                         github_token, repo_owner, repo_name,
-                        target_path, file_bytes, commit_msg_rec, branch
+                        target_path, file_bytes, commit, branch
                     )
-                results.append((rec_file.name, status, resp))
+                results.append((rec_file.name, target_path, info, status, resp))
                 progress.progress((i + 1) / len(uploaded_recordings))
 
-            for fname, status, resp in results:
+            st.markdown("**📊 Upload Results:**")
+            for fname, path, info, status, resp in results:
                 if status in (200, 201):
-                    st.markdown(f'<div class="status-box success">✅ {fname} → uploaded successfully</div>', unsafe_allow_html=True)
+                    label = f"{info['roll']} — {info['name']}" if info else fname
+                    st.markdown(
+                        f'<div class="status-box success">✅ <strong>{label}</strong><br>' +
+                        f'📂 <code>{path}</code></div>',
+                        unsafe_allow_html=True
+                    )
                 else:
-                    st.markdown(f'<div class="status-box error">❌ {fname} → failed ({status}): {resp.get("message","")}</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        f'<div class="status-box error">❌ {fname} ({status}): {resp.get("message","")}</div>',
+                        unsafe_allow_html=True
+                    )
 
 st.divider()
 
