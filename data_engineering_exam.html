@@ -197,86 +197,7 @@
   }
   .start-btn:hover { opacity: 0.85; }
 
-  /* ── SCREEN RECORD MODAL ── */
-  #recordModal {
-    position: fixed; inset: 0;
-    background: rgba(4,8,15,0.96);
-    z-index: 9997;
-    display: none;
-    align-items: center; justify-content: center;
-    backdrop-filter: blur(8px);
-  }
-  #recordModal.show { display: flex; }
-  .rm-box {
-    background: var(--panel);
-    border: 1px solid var(--orange);
-    border-radius: 10px;
-    padding: 44px; width: 480px;
-    text-align: center;
-    box-shadow: 0 0 60px rgba(255,136,0,0.08);
-  }
-  .rm-icon { font-size: 52px; margin-bottom: 16px; }
-  .rm-title {
-    font-size: 22px; font-weight: 700;
-    color: var(--orange); letter-spacing: 2px;
-    margin-bottom: 10px;
-  }
-  .rm-desc {
-    font-size: 14px; color: var(--dim);
-    margin-bottom: 28px; line-height: 1.7;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .rm-status {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px; color: var(--green);
-    margin-bottom: 20px; height: 20px;
-  }
-  .rm-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .rm-btn-start {
-    background: var(--orange); color: #000;
-    border: none; border-radius: 4px;
-    padding: 11px 28px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700; font-size: 14px;
-    cursor: pointer; transition: opacity 0.2s;
-  }
-  .rm-btn-start:hover { opacity: 0.85; }
-  .rm-btn-skip {
-    background: transparent;
-    border: 1px solid var(--dim);
-    color: var(--dim);
-    border-radius: 4px;
-    padding: 11px 28px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px; cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
-  .rm-btn-skip:hover { border-color: var(--text); color: var(--text); }
-  .rm-btn-stop {
-    background: var(--red); color: #fff;
-    border: none; border-radius: 4px;
-    padding: 11px 28px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700; font-size: 14px;
-    cursor: pointer; display: none;
-    transition: opacity 0.2s;
-  }
-  .rm-btn-stop:hover { opacity: 0.85; }
-
-  /* ── RECORDING INDICATOR ── */
-  #recIndicator {
-    display: none;
-    align-items: center; gap: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; color: var(--red);
-  }
-  #recIndicator.active { display: flex; }
-  .rec-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%; background: var(--red);
-    animation: blink 1s infinite;
-  }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+   50%{opacity:0.2} }
 
   /* ── HEADER ── */
   header {
@@ -409,8 +330,7 @@
   @media print {
     body { background: #fff !important; color: #000 !important; }
     body::before { display: none; }
-    header, #lockscreen, #studentForm, #recordModal,
-    .save-bar, #idleBar, #idleWarning { display: none !important; }
+    header, #lockscreen, #studentForm, .save-bar, #idleBar, #idleWarning { display: none !important; }
     #examArea { max-width: 100%; padding: 0; }
     .q-card { border: 1px solid #ccc !important; background: #fff !important; page-break-inside: avoid; margin-bottom: 18px; }
     .q-header { border-bottom: 1px solid #eee !important; background: #f4f8ff !important; }
@@ -454,24 +374,7 @@
   </div>
 </div>
 
-<!-- ── SCREEN RECORD MODAL ── -->
-<div id="recordModal">
-  <div class="rm-box">
-    <div class="rm-icon">🎥</div>
-    <div class="rm-title">SCREEN RECORDING</div>
-    <div class="rm-desc">
-      This exam requires screen recording for integrity verification.<br><br>
-      Click <strong style="color:#ff8800">Start Recording</strong> to begin capturing your screen.
-      Your recording will be automatically saved when the exam ends.
-    </div>
-    <div class="rm-status" id="rmStatus"></div>
-    <div class="rm-btns">
-      <button class="rm-btn-start" id="rmStartBtn" onclick="startRecording()">▶ Start Recording</button>
-      <button class="rm-btn-stop" id="rmStopBtn" onclick="stopAndSaveRecording()">⏹ Stop &amp; Save</button>
-      <button class="rm-btn-skip" onclick="skipRecording()">Skip (Not Recommended)</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- ── LOCK SCREEN ── -->
 <div id="lockscreen" class="hidden">
@@ -496,9 +399,7 @@
     </div>
   </div>
   <div class="header-right">
-    <div id="recIndicator">
-      <div class="rec-dot"></div>
-      REC
+    REC
     </div>
     <div class="student-info">
       <span id="studentNameDisplay">—</span>
@@ -723,12 +624,6 @@ let idleSecondsLeft = 20;
 let idleInterval = null;
 const IDLE_LIMIT = 20;
 
-// Recording state
-let mediaRecorder = null;
-let recordedChunks = [];
-let isRecording = false;
-let studentName = '';
-let studentRoll = '';
 
 // ─── DATE ─────────────────────────────────────────────────────────────────────
 document.getElementById('sfDate').value = new Date().toLocaleDateString('en-IN',
@@ -751,108 +646,9 @@ function startExam() {
   document.getElementById('pdfDateBlock').textContent = document.getElementById('sfDate').value;
 
   document.getElementById('studentForm').style.display = 'none';
-
-  // Show screen recording modal
-  document.getElementById('recordModal').classList.add('show');
-}
-
-// ─── SCREEN RECORDING ────────────────────────────────────────────────────────
-async function startRecording() {
-  try {
-    document.getElementById('rmStatus').textContent = '⏳ Requesting screen access...';
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { mediaSource: 'screen', cursor: 'always' },
-      audio: false
-    });
-
-    recordedChunks = [];
-    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
-
-    mediaRecorder.ondataavailable = e => {
-      if (e.data.size > 0) recordedChunks.push(e.data);
-    };
-
-    mediaRecorder.onstop = () => {
-      saveRecordingLocally();
-      stream.getTracks().forEach(t => t.stop());
-    };
-
-    // Auto-stop if user stops sharing
-    stream.getVideoTracks()[0].onended = () => {
-      if (isRecording) {
-        isRecording = false;
-        document.getElementById('recIndicator').classList.remove('active');
-      }
-    };
-
-    mediaRecorder.start(1000);
-    isRecording = true;
-
-    document.getElementById('rmStatus').textContent = '✅ Recording started successfully!';
-    document.getElementById('rmStartBtn').style.display = 'none';
-    document.getElementById('rmStopBtn').style.display = 'inline-block';
-    document.getElementById('recIndicator').classList.add('active');
-
-    setTimeout(() => {
-      document.getElementById('recordModal').classList.remove('show');
-      beginExam();
-    }, 1500);
-
-  } catch (err) {
-    document.getElementById('rmStatus').textContent = '⚠ Access denied or not supported. You may skip.';
-    console.warn('Screen capture error:', err);
-  }
-}
-
-function stopAndSaveRecording() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-    isRecording = false;
-    document.getElementById('recIndicator').classList.remove('active');
-    document.getElementById('rmStopBtn').style.display = 'none';
-    document.getElementById('rmStartBtn').style.display = 'inline-block';
-    document.getElementById('rmStatus').textContent = '💾 Saving recording...';
-  }
-}
-
-function saveRecordingLocally() {
-  if (recordedChunks.length === 0) return;
-  const blob = new Blob(recordedChunks, { type: 'video/webm' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-
-  // Build descriptive filename with all student details
-  const now = new Date();
-  const datePart = now.toLocaleDateString('en-IN',
-    { day:'2-digit', month:'2-digit', year:'numeric' }).replace(/\//g,'-');
-  const timePart = now.toTimeString().slice(0,8).replace(/:/g,'-');
-  const safeName = studentName.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
-  const safeRoll = studentRoll.replace(/[^a-zA-Z0-9_\-]/g,'');
-
-  // Format: ROLL__NAME__DATE__TIME.webm
-  const fileName = `${safeRoll}__${safeName}__${datePart}__${timePart}.webm`;
-
-  // Store filename globally so Streamlit app can use it
-  window._lastRecordingName = fileName;
-  window._studentFolder = `${safeRoll}_${safeName}`;
-
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-
-  document.getElementById('rmStatus').innerHTML =
-    `<span style="color:#00e6a0">✅ Saved!</span> <span style="color:#00cfff;font-size:12px">${fileName}</span><br>
-     <span style="font-size:11px;color:#3a5070;margin-top:4px;display:block">
-       📁 Will be stored in: recordings/${safeRoll}_${safeName}/ on GitHub
-     </span>`;
-}
-
-function skipRecording() {
-  document.getElementById('recordModal').classList.remove('show');
   beginExam();
 }
+
 
 function beginExam() {
   examStarted = true;
@@ -894,8 +690,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && examStarted) lockExam('Tab switch detected');
 });
 window.addEventListener('blur', () => {
-  if (examStarted && !document.getElementById('recordModal').classList.contains('show'))
-    lockExam('Application focus lost — another window opened');
+  if (examStarted) lockExam('Application focus lost — another window opened');
 });
 
 // ─── IDLE ─────────────────────────────────────────────────────────────────────
@@ -908,8 +703,7 @@ function startIdleWatch() {
   clearIdleTimers();
   idleInterval = setInterval(() => {
     if (!examStarted) return;
-    if (document.getElementById('lockscreen').classList.contains('hidden') &&
-        !document.getElementById('recordModal').classList.contains('show')) {
+    if (document.getElementById('lockscreen').classList.contains('hidden')) {
       idleSecondsLeft--;
       updateIdleBar();
       if (idleSecondsLeft <= 6 && idleSecondsLeft > 0) showIdleWarning();
