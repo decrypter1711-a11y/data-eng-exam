@@ -820,13 +820,33 @@ function saveRecordingLocally() {
   const blob = new Blob(recordedChunks, { type: 'video/webm' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+
+  // Build descriptive filename with all student details
+  const now = new Date();
+  const datePart = now.toLocaleDateString('en-IN',
+    { day:'2-digit', month:'2-digit', year:'numeric' }).replace(/\//g,'-');
+  const timePart = now.toTimeString().slice(0,8).replace(/:/g,'-');
+  const safeName = studentName.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+  const safeRoll = studentRoll.replace(/[^a-zA-Z0-9_\-]/g,'');
+
+  // Format: ROLL__NAME__DATE__TIME.webm
+  const fileName = `${safeRoll}__${safeName}__${datePart}__${timePart}.webm`;
+
+  // Store filename globally so Streamlit app can use it
+  window._lastRecordingName = fileName;
+  window._studentFolder = `${safeRoll}_${safeName}`;
+
   a.href = url;
-  a.download = `exam-recording_${studentName.replace(/\s+/g,'-')}_${studentRoll}_${ts}.webm`;
+  a.download = fileName;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-  document.getElementById('rmStatus').textContent = '✅ Recording saved to Downloads!';
+
+  document.getElementById('rmStatus').innerHTML =
+    `<span style="color:#00e6a0">✅ Saved!</span> <span style="color:#00cfff;font-size:12px">${fileName}</span><br>
+     <span style="font-size:11px;color:#3a5070;margin-top:4px;display:block">
+       📁 Will be stored in: recordings/${safeRoll}_${safeName}/ on GitHub
+     </span>`;
 }
 
 function skipRecording() {
@@ -923,14 +943,36 @@ document.addEventListener('keydown', () => {
 
 // ─── SAVE PDF ─────────────────────────────────────────────────────────────────
 function savePDF() {
+  // Pause all lock triggers during print
+  examStarted = false;
+  clearIdleTimers();
+
   document.getElementById('pdfStudentBlock').style.display = 'block';
+
   setTimeout(() => {
     window.print();
+
+    // Resume exam mode after print dialog closes
     setTimeout(() => {
       document.getElementById('pdfStudentBlock').style.display = 'none';
+      examStarted = true;
+      resetIdle();
+      startIdleWatch();
     }, 1500);
   }, 100);
 }
+
+// Also pause lock on native print events (Ctrl+P)
+window.addEventListener('beforeprint', () => {
+  examStarted = false;
+  clearIdleTimers();
+});
+window.addEventListener('afterprint', () => {
+  document.getElementById('pdfStudentBlock').style.display = 'none';
+  examStarted = true;
+  resetIdle();
+  startIdleWatch();
+});
 
 // ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
 document.addEventListener('contextmenu', e => e.preventDefault());
