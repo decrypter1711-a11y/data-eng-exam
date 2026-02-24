@@ -737,7 +737,7 @@ document.addEventListener('keydown', () => {
 
 // ─── SAVE PDF ─────────────────────────────────────────────────────────────────
 function savePDF() {
-  // Pause all lock triggers during print
+  // Pause lock during print only
   examStarted = false;
   clearIdleTimers();
 
@@ -746,17 +746,16 @@ function savePDF() {
   setTimeout(() => {
     window.print();
 
-    // Resume exam mode after print dialog closes
+    // After print dialog closes → lock the exam
     setTimeout(() => {
       document.getElementById('pdfStudentBlock').style.display = 'none';
       examStarted = true;
-      resetIdle();
-      startIdleWatch();
+      lockExam('PDF saved — please verify with invigilator to continue');
     }, 1500);
   }, 100);
 }
 
-// Also pause lock on native print events (Ctrl+P)
+// Also handle Ctrl+P
 window.addEventListener('beforeprint', () => {
   examStarted = false;
   clearIdleTimers();
@@ -764,8 +763,7 @@ window.addEventListener('beforeprint', () => {
 window.addEventListener('afterprint', () => {
   document.getElementById('pdfStudentBlock').style.display = 'none';
   examStarted = true;
-  resetIdle();
-  startIdleWatch();
+  lockExam('PDF saved — please verify with invigilator to continue');
 });
 
 // ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
