@@ -556,7 +556,7 @@ function confirmSubmit() {
 function submitExam(autoSubmit) {
   _examDone = true;
   stopTimer();
-  clearState();
+  saveState(); // Keep state permanently so refresh shows certificate, not fresh exam
   const elapsed = Math.round((Date.now() - startTime) / 1000);
   const answered = userAnswers.filter(a => a !== -1).length;
   const correct = userAnswers.filter((a,i) => a !== -1 && a === questions[i].ans).length;
