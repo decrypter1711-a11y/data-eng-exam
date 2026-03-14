@@ -426,9 +426,19 @@ const questions = [
 ];
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
+// ─── PERSISTENCE ─────────────────────────────────────────────────────────────
+const STORE_KEY = 'reconExamState_v1';
+function saveState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({userAnswers,timeLeft,startTime,_examDone})); } catch(e){}
+}
+function loadState() {
+  try { const r=localStorage.getItem(STORE_KEY); return r?JSON.parse(r):null; } catch(e){return null;}
+}
+function clearState() { try{localStorage.removeItem(STORE_KEY);}catch(e){} }
+
 const userAnswers = new Array(questions.length).fill(-1);
 let timerInterval = null;
-let timeLeft = 600; // 10 minutes in seconds
+let timeLeft = 600;
 let startTime = Date.now();
 
 // ─── RENDER QUESTIONS ─────────────────────────────────────────────────────────
@@ -490,6 +500,7 @@ function selectAnswer(qi, oi) {
   badge.classList.add('answered-badge');
 
   updateStats();
+  saveState();
 }
 
 // ─── STATS ────────────────────────────────────────────────────────────────────
@@ -522,6 +533,7 @@ function startTimer() {
     disp.textContent = formatTime(timeLeft);
     if (timeLeft <= 60) { disp.className = 'danger'; }
     else if (timeLeft <= 180) { disp.className = 'warn'; }
+    saveState();
     if (timeLeft <= 0) { clearInterval(timerInterval); submitExam(true); }
   }, 1000);
 }
@@ -542,6 +554,7 @@ function confirmSubmit() {
 function submitExam(autoSubmit) {
   _examDone = true;
   stopTimer();
+  clearState();
   const elapsed = Math.round((Date.now() - startTime) / 1000);
   const answered = userAnswers.filter(a => a !== -1).length;
   const correct = userAnswers.filter((a,i) => a !== -1 && a === questions[i].ans).length;
@@ -633,12 +646,53 @@ function screenshotCert() {
   });
 }
 
+// ─── RESTORE ANSWERED QUESTIONS FROM SAVED STATE ─────────────────────────────
+function restoreAnswers(saved) {
+  saved.userAnswers.forEach((oi, qi) => {
+    if (oi === -1) return;
+    userAnswers[qi] = oi;
+    const optsDiv = document.getElementById(`opts-${qi}`);
+    if (!optsDiv) return;
+    const opts = optsDiv.querySelectorAll('.opt');
+    opts.forEach((el, j) => {
+      el.classList.add('locked-opt');
+      el.onclick = null;
+      if (j === questions[qi].ans) el.classList.add('show-correct');
+      if (j === oi && oi !== questions[qi].ans) el.classList.add('selected-wrong');
+      if (j === oi && oi === questions[qi].ans) el.classList.add('selected-correct');
+    });
+    document.getElementById(`qcard-${qi}`).classList.add('answered');
+    document.getElementById(`qnum-${qi}`).classList.add('answered-badge');
+  });
+}
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 renderQuestions();
-updateStats();
-// Start exam immediately — no password on load
-startTime = Date.now();
-startTimer();
+
+const _saved = loadState();
+if (_saved) {
+  // Restore state from localStorage
+  _saved.userAnswers.forEach((v, i) => userAnswers[i] = v);
+  timeLeft = Math.max(0, _saved.timeLeft);
+  startTime = _saved.startTime;
+  _examDone = _saved._examDone || false;
+
+  restoreAnswers(_saved);
+  updateStats();
+
+  if (_examDone) {
+    // Re-run submitExam UI without resetting state
+    submitExam(false);
+  } else {
+    document.getElementById('timerDisplay').textContent = formatTime(timeLeft);
+    startTimer();
+  }
+} else {
+  // Fresh start
+  updateStats();
+  startTime = Date.now();
+  startTimer();
+}
 </script>
 </body>
 </html>
