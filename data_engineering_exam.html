@@ -3,771 +3,595 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Data Engineering & Analytics — Lab Exam</title>
+<title>Modern Recon Techniques — Secure MCQ Exam</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d1117;--surface:#161b22;--border:#30363d;
+    --green:#39d353;--red:#f85149;--blue:#58a6ff;
+    --yellow:#d29922;--text:#e6edf3;--muted:#8b949e;
+    --card:#1f2937;--accent:#1e40af;
+  }
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;user-select:none;-webkit-user-select:none;}
 
-  :root {
-    --cyan: #00cfff;
-    --accent: #7b5ea7;
-    --red: #ff3860;
-    --orange: #ff8800;
-    --bg: #04080f;
-    --panel: #080f1c;
-    --panel2: #0c1626;
-    --border: #0e2040;
-    --text: #c0d4f0;
-    --dim: #3a5070;
-    --green: #00e6a0;
-  }
+  /* LOCK SCREEN */
+  #lockScreen{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;backdrop-filter:blur(12px);}
+  #lockScreen.hidden{display:none}
+  .lock-icon{font-size:64px;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .lock-title{font-size:28px;font-weight:700;color:var(--red);letter-spacing:1px}
+  .lock-sub{color:var(--muted);font-size:14px;text-align:center;max-width:300px}
+  .lock-input-wrap{position:relative;width:280px}
+  .lock-input-wrap input{width:100%;padding:14px 18px;border-radius:10px;border:2px solid var(--border);background:#0d1117;color:var(--text);font-size:16px;outline:none;transition:border-color .2s}
+  .lock-input-wrap input:focus{border-color:var(--blue)}
+  .lock-btn{width:280px;padding:14px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .2s}
+  .lock-btn:hover{opacity:.85}
+  .lock-error{color:var(--red);font-size:13px;display:none;margin-top:-12px}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* HEADER */
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .header-left h1{font-size:20px;font-weight:700;color:var(--blue)}
+  .header-left p{font-size:12px;color:var(--muted);margin-top:2px}
+  .timer-wrap{display:flex;align-items:center;gap:12px}
+  #timerDisplay{font-size:28px;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums;letter-spacing:2px;transition:color .3s}
+  #timerDisplay.warn{color:var(--yellow);animation:blink .5s step-end infinite}
+  #timerDisplay.danger{color:var(--red);animation:blink .3s step-end infinite}
+  @keyframes blink{50%{opacity:.3}}
+  .timer-label{font-size:11px;color:var(--muted);text-align:center}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 16px;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+  /* PROGRESS */
+  .progress-bar-wrap{height:4px;background:var(--border)}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));width:0%;transition:width .4s}
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,207,255,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,207,255,0.025) 1px, transparent 1px);
-    background-size: 44px 44px;
-    pointer-events: none;
-    z-index: 0;
-  }
+  /* MAIN */
+  .main{max-width:900px;margin:0 auto;padding:32px 20px}
+  .stats-row{display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap}
+  .stat-card{flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+  .stat-card .val{font-size:28px;font-weight:800;color:var(--blue)}
+  .stat-card .lbl{font-size:11px;color:var(--muted);margin-top:4px}
 
-  /* ── LOCKSCREEN ── */
-  #lockscreen {
-    position: fixed; inset: 0;
-    background: rgba(4,8,15,0.97);
-    z-index: 9999;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    backdrop-filter: blur(10px);
-  }
-  #lockscreen.hidden { display: none; }
+  /* QUESTION CARD */
+  .q-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:20px;transition:border-color .3s}
+  .q-card.answered{border-color:#264f3f}
+  .q-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
+  .q-num{background:var(--accent);color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0}
+  .q-num.answered-badge{background:#15803d}
+  .q-text{font-size:16px;line-height:1.55;color:var(--text)}
+  .q-topic{font-size:10px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;display:inline-block;margin-bottom:10px}
+  .options{display:flex;flex-direction:column;gap:10px}
+  .opt{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:10px;border:2px solid var(--border);cursor:pointer;transition:all .2s;position:relative}
+  .opt:hover:not(.locked-opt){border-color:var(--blue);background:rgba(88,166,255,.06)}
+  .opt.locked-opt{cursor:not-allowed;opacity:.7}
+  .opt.selected-correct{border-color:var(--green);background:rgba(57,211,83,.1);cursor:not-allowed}
+  .opt.selected-wrong{border-color:var(--red);background:rgba(248,81,73,.1);cursor:not-allowed}
+  .opt.show-correct{border-color:var(--green);background:rgba(57,211,83,.07);cursor:not-allowed}
+  .opt-letter{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:all .2s}
+  .opt.selected-correct .opt-letter{background:var(--green);border-color:var(--green);color:#000}
+  .opt.selected-wrong .opt-letter{background:var(--red);border-color:var(--red);color:#fff}
+  .opt.show-correct .opt-letter{background:var(--green);border-color:var(--green);color:#000}
+  .opt-text{font-size:14px;line-height:1.45}
 
-  .lock-ring {
-    width: 90px; height: 90px;
-    border-radius: 50%;
-    border: 3px solid var(--red);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 36px;
-    animation: pulse-ring 2s infinite;
-    margin-bottom: 24px;
-    box-shadow: 0 0 30px rgba(255,56,96,0.3);
-  }
-  @keyframes pulse-ring {
-    0%,100% { box-shadow: 0 0 20px rgba(255,56,96,0.3); }
-    50% { box-shadow: 0 0 50px rgba(255,56,96,0.6); }
-  }
-  .lock-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 20px; color: var(--red);
-    letter-spacing: 5px; text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-  .lock-reason {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; color: var(--dim);
-    margin-bottom: 32px;
-  }
-  .lock-input-wrap { display: flex; gap: 10px; align-items: center; }
-  #lockPassword {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--cyan);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 16px;
-    padding: 10px 16px;
-    width: 240px; outline: none;
-    letter-spacing: 3px;
-    transition: border-color 0.2s;
-  }
-  #lockPassword:focus { border-color: var(--cyan); }
-  #lockPassword.wrong { border-color: var(--red); animation: shake 0.4s; }
-  @keyframes shake {
-    0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}
-  }
-  .unlock-btn {
-    background: var(--cyan); color: #000;
-    border: none; border-radius: 4px;
-    padding: 10px 22px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700; font-size: 14px;
-    cursor: pointer; transition: opacity 0.2s;
-  }
-  .unlock-btn:hover { opacity: 0.85; }
-  #lockError {
-    margin-top: 14px; color: var(--red);
-    font-size: 13px;
-    font-family: 'JetBrains Mono', monospace;
-    height: 20px;
-  }
+  /* SUBMIT BTN */
+  .submit-area{text-align:center;margin-top:32px;padding-bottom:60px}
+  .submit-btn{padding:16px 48px;border-radius:12px;border:none;background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;font-size:18px;font-weight:700;cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 20px rgba(37,99,235,.4);transition:all .3s}
+  .submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(37,99,235,.5)}
+  .answered-count{color:var(--muted);font-size:13px;margin-top:12px}
 
-  /* ── IDLE BAR ── */
-  #idleBar {
-    position: fixed; top: 0; left: 0;
-    height: 3px; background: var(--cyan);
-    transition: width 1s linear, background 0.5s;
-    z-index: 8888;
-  }
-  #idleWarning {
-    position: fixed; bottom: 70px; right: 20px;
-    background: #1a0e00;
-    border: 1px solid var(--orange);
-    color: var(--orange);
-    padding: 10px 18px; border-radius: 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px; z-index: 8889;
-    display: none; animation: fadeIn 0.3s ease;
-  }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  /* CERTIFICATE MODAL */
+  #certModal{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:none;align-items:center;justify-content:center;padding:20px}
+  #certModal.show{display:flex}
+  .cert-wrap{background:var(--surface);border:1px solid var(--border);border-radius:20px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto}
+  .cert-inner{padding:48px;text-align:center}
+  .cert-logo{font-size:64px;margin-bottom:16px}
+  .cert-title-top{font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+  .cert-title{font-size:32px;font-weight:800;color:var(--blue);margin-bottom:4px}
+  .cert-subtitle{color:var(--muted);margin-bottom:32px;font-size:14px}
+  .cert-name{font-size:22px;font-weight:700;margin:16px 0;color:var(--text)}
+  .score-circle{width:160px;height:160px;border-radius:50%;margin:0 auto 28px;display:flex;align-items:center;justify-content:center;flex-direction:column;border:6px solid var(--green);position:relative}
+  .score-circle.fail{border-color:var(--red)}
+  .score-big{font-size:48px;font-weight:900;color:var(--green);line-height:1}
+  .score-circle.fail .score-big{color:var(--red)}
+  .score-sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .cert-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:24px 0;text-align:center}
+  .cert-stat{background:var(--card);border-radius:12px;padding:16px}
+  .cert-stat .cv{font-size:24px;font-weight:800;color:var(--blue)}
+  .cert-stat .cl{font-size:11px;color:var(--muted);margin-top:4px}
+  .cert-grade{font-size:36px;font-weight:900;margin:8px 0}
+  .cert-msg{color:var(--muted);font-size:14px;margin-bottom:24px;line-height:1.6}
+  .cert-footer{font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:20px;margin-top:20px;line-height:1.8}
+  .print-btn{padding:12px 32px;border-radius:10px;border:none;background:var(--green);color:#000;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+  .print-btn:hover{opacity:.85}
 
-  /* ── STUDENT FORM ── */
-  #studentForm {
-    position: fixed; inset: 0;
-    background: rgba(4,8,15,0.98);
-    z-index: 9998;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .sf-box {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 44px; width: 460px;
-    text-align: center;
-    box-shadow: 0 0 60px rgba(0,207,255,0.05);
-  }
-  .sf-badge {
-    display: inline-block;
-    background: rgba(0,207,255,0.08);
-    border: 1px solid rgba(0,207,255,0.2);
-    color: var(--cyan);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; letter-spacing: 3px;
-    padding: 4px 14px; border-radius: 20px;
-    margin-bottom: 14px; text-transform: uppercase;
-  }
-  .sf-title {
-    font-size: 26px; font-weight: 700;
-    color: #fff; letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
-  .sf-sub {
-    font-size: 12px; color: var(--dim);
-    margin-bottom: 30px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .sf-field {
-    display: flex; flex-direction: column;
-    text-align: left; margin-bottom: 16px;
-  }
-  .sf-field label {
-    font-size: 11px; color: var(--dim);
-    text-transform: uppercase; letter-spacing: 2px;
-    margin-bottom: 6px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .sf-field input {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px; color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 15px; padding: 10px 14px;
-    outline: none; transition: border-color 0.2s;
-  }
-  .sf-field input:focus { border-color: var(--cyan); }
-  .start-btn {
-    width: 100%; background: var(--cyan); color: #000;
-    border: none; border-radius: 4px; padding: 14px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700; font-size: 15px;
-    cursor: pointer; margin-top: 10px;
-    letter-spacing: 2px; transition: opacity 0.2s;
-  }
-  .start-btn:hover { opacity: 0.85; }
+  /* SECTION DIVIDER */
+  .section-divider{display:flex;align-items:center;gap:16px;margin:32px 0 24px}
+  .section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+  .section-label{font-size:12px;font-weight:700;letter-spacing:2px;color:var(--blue);background:var(--surface);padding:6px 16px;border-radius:20px;border:1px solid var(--border);text-transform:uppercase}
 
-   50%{opacity:0.2} }
-
-  /* ── HEADER ── */
-  header {
-    position: relative; z-index: 10;
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 40px;
-    display: flex; align-items: center;
-    justify-content: space-between;
+  @media print{
+    #lockScreen,#certModal,#timerDisplay,.header,.progress-bar-wrap,.submit-area,.stats-row{display:none!important}
+    .cert-wrap{border:none;box-shadow:none;page-break-inside:avoid}
+    body{background:#fff;color:#000}
   }
-  .logo { display: flex; align-items: center; gap: 14px; }
-  .logo-icon { font-size: 26px; }
-  .logo-text {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 16px; font-weight: 700;
-    color: var(--cyan); letter-spacing: 2px;
-  }
-  .logo-sub {
-    font-size: 10px; color: var(--dim);
-    letter-spacing: 3px; text-transform: uppercase;
-    margin-top: 2px;
-  }
-  .header-right { display: flex; align-items: center; gap: 20px; }
-  .student-info {
-    text-align: right;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; color: var(--dim);
-  }
-  #studentNameDisplay {
-    color: var(--cyan); font-size: 13px;
-    font-weight: 700; display: block;
-  }
-
-  /* ── EXAM AREA ── */
-  #examArea {
-    position: relative; z-index: 1;
-    max-width: 920px; margin: 0 auto;
-    padding: 40px 24px 90px;
-  }
-  .exam-header-bar {
-    display: flex; align-items: center;
-    justify-content: space-between;
-    margin-bottom: 36px; padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .exam-title {
-    font-size: 24px; font-weight: 700;
-    color: var(--cyan); letter-spacing: 2px;
-  }
-  .exam-meta {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; color: var(--dim); text-align: right;
-  }
-
-  /* ── QUESTION CARD ── */
-  .q-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px; margin-bottom: 22px;
-    overflow: hidden; transition: border-color 0.3s;
-  }
-  .q-card:focus-within { border-color: rgba(0,207,255,0.3); }
-  .q-header {
-    display: flex; align-items: flex-start;
-    gap: 14px; padding: 18px 22px 14px;
-    border-bottom: 1px solid var(--border);
-    background: var(--panel2);
-  }
-  .q-num {
-    background: rgba(0,207,255,0.08);
-    border: 1px solid rgba(0,207,255,0.18);
-    color: var(--cyan);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; font-weight: 700;
-    padding: 4px 10px; border-radius: 3px;
-    white-space: nowrap; margin-top: 2px;
-    flex-shrink: 0;
-  }
-  .q-text {
-    font-size: 16px; font-weight: 600;
-    color: #dceeff; line-height: 1.55;
-  }
-  .q-body { padding: 16px 22px; }
-  .q-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; color: var(--dim);
-    text-transform: uppercase; letter-spacing: 2px;
-    margin-bottom: 8px;
-  }
-  textarea {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px; color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px; padding: 12px 16px;
-    resize: vertical; min-height: 100px;
-    outline: none; line-height: 1.7;
-    transition: border-color 0.2s;
-  }
-  textarea:focus { border-color: rgba(0,207,255,0.35); }
-
-  /* ── SAVE BAR ── */
-  .save-bar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: var(--panel);
-    border-top: 1px solid var(--border);
-    padding: 12px 40px;
-    display: flex; align-items: center;
-    justify-content: space-between; z-index: 100;
-  }
-  .save-info {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; color: var(--dim);
-  }
-  .bar-actions { display: flex; gap: 12px; align-items: center; }
-  .pdf-btn {
-    background: transparent;
-    border: 1px solid var(--cyan); color: var(--cyan);
-    border-radius: 4px; padding: 9px 24px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700; font-size: 13px;
-    cursor: pointer; letter-spacing: 1px;
-    transition: all 0.2s;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .pdf-btn:hover { background: var(--cyan); color: #000; }
-
-  /* ── PRINT ── */
-  @media print {
-    body { background: #fff !important; color: #000 !important; }
-    body::before { display: none; }
-    header, #lockscreen, #studentForm, .save-bar, #idleBar, #idleWarning { display: none !important; }
-    #examArea { max-width: 100%; padding: 0; }
-    .q-card { border: 1px solid #ccc !important; background: #fff !important; page-break-inside: avoid; margin-bottom: 18px; }
-    .q-header { border-bottom: 1px solid #eee !important; background: #f4f8ff !important; }
-    .q-num { background: #e8f0ff !important; border: 1px solid #a0b8e0 !important; color: #003399 !important; }
-    .q-text { color: #111 !important; }
-    .q-label { color: #666 !important; }
-    textarea { border: 1px solid #ddd !important; background: #fafafa !important; color: #222 !important; min-height: auto; height: auto; resize: none; }
-    .exam-header-bar { border-bottom: 2px solid #003399 !important; }
-    .exam-title { color: #003399 !important; }
-    .exam-meta { color: #444 !important; }
-    .pdf-header-print { display: block !important; text-align: center; padding: 20px 0 28px; border-bottom: 2px solid #003399; margin-bottom: 28px; }
-    .pdf-student-block { background: #eef4ff; border: 1px solid #a0b8e0; border-radius: 6px; padding: 14px 20px; margin-bottom: 28px; }
-  }
-  .pdf-header-print { display: none; }
 </style>
 </head>
 <body>
 
-<div id="idleBar" style="width:100%"></div>
-<div id="idleWarning">⚠ No activity detected — locking soon...</div>
-
-<!-- ── STUDENT FORM ── -->
-<div id="studentForm">
-  <div class="sf-box">
-    <div class="sf-badge">// secure assessment portal</div>
-    <div class="sf-title">📊 LAB EXAM</div>
-    <div class="sf-sub">DATA ENGINEERING &amp; ANALYTICS MODULE</div>
-    <div class="sf-field">
-      <label>Full Name</label>
-      <input type="text" id="sfName" placeholder="Your full name" />
-    </div>
-    <div class="sf-field">
-      <label>Roll Number / ID</label>
-      <input type="text" id="sfRoll" placeholder="e.g. DE-2024-01" />
-    </div>
-    <div class="sf-field">
-      <label>Date</label>
-      <input type="text" id="sfDate" />
-    </div>
-    <button class="start-btn" onclick="startExam()">BEGIN EXAM →</button>
-  </div>
-</div>
-
-
-
-<!-- ── LOCK SCREEN ── -->
-<div id="lockscreen" class="hidden">
-  <div class="lock-ring">🔒</div>
-  <div class="lock-title">EXAM LOCKED</div>
-  <div class="lock-reason" id="lockReason">// Suspicious activity detected</div>
+<!-- LOCK SCREEN -->
+<div id="lockScreen" class="hidden">
+  <div class="lock-icon">🔒</div>
+  <div class="lock-title">Session Locked</div>
+  <div class="lock-sub">Your exam has been locked due to inactivity or a security event. Enter the password to continue.</div>
   <div class="lock-input-wrap">
-    <input type="password" id="lockPassword" placeholder="Enter admin password"
-      onkeydown="if(event.key==='Enter')tryUnlock()" />
-    <button class="unlock-btn" onclick="tryUnlock()">UNLOCK</button>
+    <input type="password" id="lockPwdInput" placeholder="Enter unlock password" autocomplete="off">
   </div>
-  <div id="lockError"></div>
+  <p class="lock-error" id="lockError">❌ Incorrect password. Try again.</p>
+  <button class="lock-btn" onclick="tryUnlock()">🔓 Unlock Exam</button>
 </div>
 
-<!-- ── HEADER ── -->
-<header>
-  <div class="logo">
-    <div class="logo-icon">🗄</div>
-    <div>
-      <div class="logo-text">DATA ENG LAB EXAM</div>
-      <div class="logo-sub">Secure Assessment Portal</div>
+<!-- CERTIFICATE MODAL -->
+<div id="certModal">
+  <div class="cert-wrap">
+    <div class="cert-inner" id="certContent">
+      <!-- Filled by JS -->
     </div>
   </div>
-  <div class="header-right">
-    REC
-    </div>
-    <div class="student-info">
-      <span id="studentNameDisplay">—</span>
-      <span id="studentRollDisplay"></span>
-    </div>
-  </div>
-</header>
-
-<!-- ── EXAM AREA ── -->
-<div id="examArea">
-  <div class="pdf-header-print">
-    <h1 style="color:#003399;font-size:24px;margin-bottom:6px;">DATA ENGINEERING &amp; ANALYTICS — LAB EXAM</h1>
-    <p style="color:#444;font-size:13px;">Secure Assessment — Submitted Answer Sheet</p>
-  </div>
-  <div class="pdf-student-block" id="pdfStudentBlock" style="display:none">
-    <strong>Name:</strong> <span id="pdfName"></span> &nbsp;&nbsp;
-    <strong>Roll No:</strong> <span id="pdfRoll"></span> &nbsp;&nbsp;
-    <strong>Date:</strong> <span id="pdfDateBlock"></span>
-  </div>
-
-  <div class="exam-header-bar">
-    <div>
-      <div class="exam-title">ANSWER SHEET</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);margin-top:4px;">
-        // Answer all questions in detail
-      </div>
-    </div>
-    <div class="exam-meta">
-      Total Questions: 15<br>
-      <span id="examDate"></span>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 01</span>
-      <div class="q-text">What is the difference between a Data Scientist and a Data Analyst?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a1" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 02</span>
-      <div class="q-text">What is Batch Processing? What are its Characteristics?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a2" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 03</span>
-      <div class="q-text">What are the Key Differences Between Batch and Streaming Data Processing?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a3" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 04</span>
-      <div class="q-text">What is the difference between MySQL and PostgreSQL?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a4" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 05</span>
-      <div class="q-text">What are the Attributes of Indexing and File Organization in Indexing?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a5" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 06</span>
-      <div class="q-text">What are the Key Features of NumPy and how do you install NumPy using pip?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a6" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 07</span>
-      <div class="q-text">What is the difference between CSV and JSON?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a7" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 08</span>
-      <div class="q-text">Explain the ETL Design Pattern and the ELT Design Pattern.</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a8" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 09</span>
-      <div class="q-text">What is a DAG in Apache Airflow? Why must it be acyclic?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a9" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 10</span>
-      <div class="q-text">What is the difference between pulling data from a REST API vs a streaming source like Kafka? When would you choose each?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a10" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 11</span>
-      <div class="q-text">What is the difference between a REST API and a JSON API?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a11" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 12</span>
-      <div class="q-text">Which has higher latency — batch or streaming? Why?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a12" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 13</span>
-      <div class="q-text">What is the difference between Data Lakes and Data Warehouses?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a13" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 14</span>
-      <div class="q-text">What is Cloud Storage? Explain AWS S3 Cloud Storage.</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a14" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header">
-      <span class="q-num">Q 15</span>
-      <div class="q-text">What is Encryption? How does it work?</div>
-    </div>
-    <div class="q-body">
-      <div class="q-label">// Your Answer</div>
-      <textarea id="a15" placeholder="Write your answer here..."></textarea>
-    </div>
-  </div>
-
 </div>
 
-<!-- ── SAVE BAR ── -->
-<div class="save-bar">
-  <div class="save-info">// Answers auto-saved in browser session</div>
-  <div class="bar-actions">
-    <button class="pdf-btn" onclick="savePDF()">⬇ SAVE AS PDF</button>
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>🔍 Modern Recon Techniques</h1>
+    <p>Ethical Hacking & Web Security Assessment</p>
+  </div>
+  <div class="timer-wrap">
+    <div>
+      <div id="timerDisplay">10:00</div>
+      <div class="timer-label">TIME LEFT</div>
+    </div>
+  </div>
+</div>
+<div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="stats-row">
+    <div class="stat-card"><div class="val" id="statTotal">25</div><div class="lbl">Total Questions</div></div>
+    <div class="stat-card"><div class="val" id="statAnswered" style="color:var(--green)">0</div><div class="lbl">Answered</div></div>
+    <div class="stat-card"><div class="val" id="statRemaining" style="color:var(--yellow)">25</div><div class="lbl">Remaining</div></div>
+    <div class="stat-card"><div class="val" id="statScore" style="color:var(--blue)">—</div><div class="lbl">Live Score</div></div>
+  </div>
+
+  <div id="questionsContainer"></div>
+
+  <div class="submit-area">
+    <button class="submit-btn" onclick="confirmSubmit()">📋 Submit Exam</button>
+    <p class="answered-count" id="submitHint">Answer all questions before submitting</p>
   </div>
 </div>
 
 <script>
-// ─── PASSWORD (SHA-256 hash of 'aimlbravynex') ────────────────────────────────
-// The actual password is NOT stored here — only its hash.
-const PASS_HASH = 'f318824a426279bb286b5d4f2735cf0f91b3aa2e24756954f54588256fd7c480';
+// ─── SECURITY ────────────────────────────────────────────────────────────────
 
-async function sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+// Obfuscated password (base64 encoded "notroot")
+const _k = atob("bm90cm9vdA==");
+
+// Block right-click
+document.addEventListener('contextmenu', e => { e.preventDefault(); lock('Security Event Detected'); });
+
+// Block keyboard shortcuts
+document.addEventListener('keydown', e => {
+  const blocked = (
+    e.key === 'F12' ||
+    (e.ctrlKey && ['u','U','s','S','a','A','p','P'].includes(e.key)) ||
+    (e.ctrlKey && e.shiftKey && ['i','I','j','J','c','C'].includes(e.key)) ||
+    (e.ctrlKey && e.altKey) ||
+    e.key === 'F5' ||
+    (e.ctrlKey && e.key === 'r')
+  );
+  if (blocked) { e.preventDefault(); e.stopPropagation(); lock('Security Event Detected'); return false; }
+});
+
+// Block DevTools via visibility or resize detection
+let _devOpen = false;
+setInterval(()=>{
+  const threshold = 160;
+  if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+    if (!_devOpen) { _devOpen = true; lock('DevTools Detected'); }
+  } else { _devOpen = false; }
+}, 500);
+
+// Tab/window visibility change → lock
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) lock('Tab Switch Detected');
+});
+window.addEventListener('blur', () => lock('Window Switched'));
+
+// Disable text selection via CSS (already via user-select none)
+document.addEventListener('selectstart', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('copy', e => e.preventDefault());
+
+// ─── IDLE LOCK ───────────────────────────────────────────────────────────────
+let _lastActivity = Date.now();
+let _locked = false;
+let _examDone = false;
+
+function resetIdle() { _lastActivity = Date.now(); }
+['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev => {
+  document.addEventListener(ev, resetIdle, {passive:true});
+});
+
+setInterval(()=>{
+  if (_examDone || _locked) return;
+  if (Date.now() - _lastActivity > 15000) lock('Idle Timeout');
+}, 1000);
+
+function lock(reason) {
+  if (_examDone) return;
+  _locked = true;
+  document.getElementById('lockScreen').classList.remove('hidden');
+  document.getElementById('lockPwdInput').value = '';
+  document.getElementById('lockError').style.display = 'none';
+  stopTimer();
 }
 
-// ─── STATE ────────────────────────────────────────────────────────────────────
-let examStarted = false;
-let idleSecondsLeft = 20;
-let idleInterval = null;
-const IDLE_LIMIT = 20;
-
-
-// ─── DATE ─────────────────────────────────────────────────────────────────────
-document.getElementById('sfDate').value = new Date().toLocaleDateString('en-IN',
-  { day: '2-digit', month: 'long', year: 'numeric' });
-
-// ─── START EXAM ───────────────────────────────────────────────────────────────
-function startExam() {
-  const name = document.getElementById('sfName').value.trim();
-  const roll = document.getElementById('sfRoll').value.trim();
-  if (!name || !roll) { alert('Please fill in your name and roll number.'); return; }
-
-  studentName = name;
-  studentRoll = roll;
-
-  document.getElementById('studentNameDisplay').textContent = name;
-  document.getElementById('studentRollDisplay').textContent = '  [' + roll + ']';
-  document.getElementById('examDate').textContent = document.getElementById('sfDate').value;
-  document.getElementById('pdfName').textContent = name;
-  document.getElementById('pdfRoll').textContent = roll;
-  document.getElementById('pdfDateBlock').textContent = document.getElementById('sfDate').value;
-
-  document.getElementById('studentForm').style.display = 'none';
-  beginExam();
-}
-
-
-function beginExam() {
-  examStarted = true;
-  resetIdle();
-  startIdleWatch();
-}
-
-// ─── LOCK / UNLOCK ────────────────────────────────────────────────────────────
-function lockExam(reason) {
-  if (!examStarted) return;
-  document.getElementById('lockReason').textContent = '// ' + reason;
-  document.getElementById('lockscreen').classList.remove('hidden');
-  document.getElementById('lockPassword').value = '';
-  document.getElementById('lockError').textContent = '';
-  clearIdleTimers();
-  setTimeout(() => document.getElementById('lockPassword').focus(), 100);
-}
-
-async function tryUnlock() {
-  const val = document.getElementById('lockPassword').value;
-  const hash = await sha256(val);
-  if (hash === PASS_HASH) {
-    document.getElementById('lockscreen').classList.add('hidden');
-    document.getElementById('lockPassword').value = '';
-    document.getElementById('lockError').textContent = '';
-    resetIdle();
-    startIdleWatch();
+function tryUnlock() {
+  const val = document.getElementById('lockPwdInput').value;
+  if (val === _k) {
+    _locked = false;
+    _lastActivity = Date.now();
+    document.getElementById('lockScreen').classList.add('hidden');
+    document.getElementById('lockError').style.display = 'none';
+    if (!_examDone) startTimer();
   } else {
-    const inp = document.getElementById('lockPassword');
-    inp.classList.add('wrong');
-    document.getElementById('lockError').textContent = 'Incorrect password. Try again.';
-    setTimeout(() => inp.classList.remove('wrong'), 500);
-    inp.value = '';
+    document.getElementById('lockError').style.display = 'block';
+    document.getElementById('lockPwdInput').value = '';
   }
 }
 
-// ─── VISIBILITY / FOCUS ───────────────────────────────────────────────────────
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden && examStarted) lockExam('Tab switch detected');
-});
-window.addEventListener('blur', () => {
-  if (examStarted) lockExam('Application focus lost — another window opened');
+document.getElementById('lockPwdInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') tryUnlock();
 });
 
-// ─── IDLE ─────────────────────────────────────────────────────────────────────
-function resetIdle() {
-  idleSecondsLeft = IDLE_LIMIT;
-  updateIdleBar();
-  hideIdleWarning();
-}
-function startIdleWatch() {
-  clearIdleTimers();
-  idleInterval = setInterval(() => {
-    if (!examStarted) return;
-    if (document.getElementById('lockscreen').classList.contains('hidden')) {
-      idleSecondsLeft--;
-      updateIdleBar();
-      if (idleSecondsLeft <= 6 && idleSecondsLeft > 0) showIdleWarning();
-      if (idleSecondsLeft <= 0) lockExam('No activity for 20 seconds');
+// ─── QUESTIONS ───────────────────────────────────────────────────────────────
+const questions = [
+  // === PART 1: RECON (15 questions) ===
+  {
+    topic: "ASN & IP Discovery",
+    text: "What does ASN stand for in the context of network reconnaissance?",
+    opts: ["Advanced Security Node","Autonomous System Number","Allocated Subnet Notation","Application Security Network"],
+    ans: 1
+  },
+  {
+    topic: "ASN & IP Discovery",
+    text: "Which tool from Hurricane Electric is used to search for ASNs and IP prefixes by company name?",
+    opts: ["Shodan","BGP.HE.NET","DNS Checker","Askata.org"],
+    ans: 1
+  },
+  {
+    topic: "ASN & IP Discovery",
+    text: "Askata.org is useful in reconnaissance primarily because it tracks:",
+    opts: ["Open CVEs for cloud services","Company acquisitions and mergers","Mail server blacklists","SSL certificate expiration"],
+    ans: 1
+  },
+  {
+    topic: "Infrastructure Discovery",
+    text: "What does SMAP use as its backend to perform passive port scanning without sending packets to the target?",
+    opts: ["Naabu scanner","Shodan passive database","Censys CT logs","Checkmi autodiscover"],
+    ans: 1
+  },
+  {
+    topic: "Infrastructure Discovery",
+    text: "Checkmi is used during recon to query which Microsoft service and reveal hidden internal domain names?",
+    opts: ["Azure AD B2C","Microsoft Autodiscover API","Office 365 OAuth","SharePoint REST API"],
+    ans: 1
+  },
+  {
+    topic: "Infrastructure Discovery",
+    text: "In a typical fast-to-deep scanning pipeline, Naabu output is piped into which tool for detailed service/version fingerprinting?",
+    opts: ["SMAP","Masscan","Nmap","Nikto"],
+    ans: 2
+  },
+  {
+    topic: "Cloud Reconnaissance",
+    text: "SSL certificates contain Subject Alternative Names (SANs). Which tool allows you to search wildcard certs like %.target.com?",
+    opts: ["Subfinder","crt.sh","Gungnir","GoWitness"],
+    ans: 1
+  },
+  {
+    topic: "Cloud Reconnaissance",
+    text: "Gungnir is a just-in-time (JIT) tool that monitors which logs to alert when new certificates are issued for a target domain?",
+    opts: ["DNSSEC logs","Certificate Transparency (CT) logs","BGP routing tables","Shodan scan logs"],
+    ans: 1
+  },
+  {
+    topic: "Cloud Reconnaissance",
+    text: "Kaducius is primarily used to scan massive cloud provider IP ranges and match responses to target fingerprints. Which cloud providers does it cover?",
+    opts: ["AWS and DigitalOcean only","Azure and GCP only","AWS, Azure, GCP, and Cloudflare","Fastly, Cloudflare, and Akamai"],
+    ans: 2
+  },
+  {
+    topic: "Subdomain Enumeration",
+    text: "Which GitHub dork would be MOST useful for finding accidentally committed database credentials for a target organisation?",
+    opts: ["org:TargetCo site:github.com","org:TargetCo \"db_password\"","org:TargetCo language:python","org:TargetCo stars:>100"],
+    ans: 1
+  },
+  {
+    topic: "Subdomain Enumeration",
+    text: "To significantly increase subdomain yield from Subfinder and Amass, the recommended approach is to:",
+    opts: ["Run both tools simultaneously in parallel","Configure API keys for Chaos, Shodan, GitHub, and SecurityTrails","Use a custom wordlist with common subdomain names","Scan all /24 IP blocks in the ASN range"],
+    ans: 1
+  },
+  {
+    topic: "Visual Prioritization",
+    text: "Eyeballer uses ML to classify screenshots. Which of the following is a target category it identifies as 'interesting'?",
+    opts: ["CDN edge nodes","Admin panels and login pages","Cloud storage buckets","DNS resolvers"],
+    ans: 1
+  },
+  {
+    topic: "Visual Prioritization",
+    text: "Which screenshot tool is described as 'pipeline-friendly and fast', written in Go, and supports custom headers and authentication?",
+    opts: ["Aquatone","Eyeballer","GoWitness","Kaducius"],
+    ans: 2
+  },
+  {
+    topic: "Web App Analysis",
+    text: "In web app analysis, if an app uses UUIDs/GUIDs to reference users (e.g. user=3f2a-...), how does this affect IDOR testing?",
+    opts: ["IDOR is impossible since UUIDs are cryptographically random","UUIDs are harder to guess but should still be tested for IDOR","UUIDs always prevent horizontal privilege escalation","UUID-based apps have no authorization vulnerabilities"],
+    ans: 1
+  },
+  {
+    topic: "Vulnerability Heat Mapping",
+    text: "According to the authorization testing matrix in the presentation, which action should be available to ALL roles including Unauthenticated?",
+    opts: ["Write Data","Delete","Admin Panel Access","Read Data"],
+    ans: 3
+  },
+  {
+    topic: "AI in Hacking",
+    text: "Which AI-assisted technique involves pasting minified JavaScript into an LLM to find hidden API endpoints?",
+    opts: ["Payload generation","JavaScript deobfuscation","Recon data parsing","WAF bypass construction"],
+    ans: 1
+  },
+
+  // === CSRF QUESTIONS ===
+  {
+    topic: "CSRF",
+    text: "What does CSRF stand for?",
+    opts: ["Cross-Site Request Forgery","Client-Side Request Failure","Cross-Server Resource Fetch","Common Security Risk Factor"],
+    ans: 0
+  },
+  {
+    topic: "CSRF",
+    text: "Which of the following is the MOST effective defense against CSRF attacks?",
+    opts: ["Using HTTPS","Implementing anti-CSRF tokens on state-changing requests","Validating Content-Type headers","Using POST instead of GET"],
+    ans: 1
+  },
+  {
+    topic: "CSRF",
+    text: "A CSRF attack works because the browser automatically includes which of the following with cross-site requests?",
+    opts: ["JavaScript code","Cookies and session credentials","Custom headers","Request body data"],
+    ans: 1
+  },
+  {
+    topic: "CSRF",
+    text: "According to the presentation's vulnerability heat map, file uploads with CSRF on settings pages can be exploited to force which action?",
+    opts: ["Remote code execution via shell upload","Email or password change without user consent","Server-side request forgery","SQL injection via form fields"],
+    ans: 1
+  },
+
+  // === OPEN REDIRECT QUESTIONS ===
+  {
+    topic: "Open Redirect",
+    text: "What is an Open Redirect vulnerability?",
+    opts: ["A server misconfiguration exposing internal directories","An input validation flaw allowing attackers to redirect users to arbitrary external URLs","An SQL error that leaks database schema","An insecure direct object reference in API endpoints"],
+    ans: 1
+  },
+  {
+    topic: "Open Redirect",
+    text: "Which URL parameter naming is most commonly exploited in Open Redirect attacks?",
+    opts: ["id, uid, user","redirect, url, next, return","token, key, secret","file, path, dir"],
+    ans: 1
+  },
+  {
+    topic: "Open Redirect",
+    text: "In the context of OAuth/SSO (mentioned in the presentation's heat map), Open Redirects are particularly dangerous because they can be used to:",
+    opts: ["Bypass MFA entirely","Steal OAuth tokens by redirecting the callback to an attacker-controlled domain","Escalate database privileges","Execute arbitrary server-side code"],
+    ans: 1
+  },
+
+  // === SQL INJECTION QUESTIONS ===
+  {
+    topic: "SQL Injection",
+    text: "What does SQL injection fundamentally exploit?",
+    opts: ["Weak encryption algorithms in database drivers","Improper sanitisation of user input that is incorporated into SQL queries","Misconfigured database firewall rules","Default database credentials left unchanged"],
+    ans: 1
+  },
+  {
+    topic: "SQL Injection",
+    text: "Which single character is the most classic indicator payload used to test for SQL injection?",
+    opts: ["<","\"","'","&"],
+    ans: 2
+  },
+  {
+    topic: "SQL Injection",
+    text: "Which tool mentioned in the presentation's Tools Quick Reference automates SQL injection testing?",
+    opts: ["Naabu","SQLmap","Burp Suite Intruder","XSSHunter"],
+    ans: 1
+  }
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const userAnswers = new Array(questions.length).fill(-1);
+let timerInterval = null;
+let timeLeft = 600; // 10 minutes in seconds
+let startTime = Date.now();
+
+// ─── RENDER QUESTIONS ─────────────────────────────────────────────────────────
+function renderQuestions() {
+  const container = document.getElementById('questionsContainer');
+  let html = '';
+  let lastTopic = '';
+  const sections = {
+    'ASN & IP Discovery': 'PART 1 · WIDE-SCOPE RECON',
+    'CSRF': 'BONUS · WEB VULNERABILITIES',
+    'Open Redirect': null,
+    'SQL Injection': null
+  };
+  questions.forEach((q, i) => {
+    const letters = ['A','B','C','D'];
+    const needsDivider = q.topic !== lastTopic && sections[q.topic];
+    if (needsDivider) {
+      html += `<div class="section-divider"><span class="section-label">${sections[q.topic]}</span></div>`;
     }
+    lastTopic = q.topic;
+    html += `
+    <div class="q-card" id="qcard-${i}">
+      <div class="q-topic">${q.topic}</div>
+      <div class="q-header">
+        <span class="q-num" id="qnum-${i}">Q${i+1}</span>
+        <span class="q-text">${q.text}</span>
+      </div>
+      <div class="options" id="opts-${i}">
+        ${q.opts.map((opt,j) => `
+        <div class="opt" id="opt-${i}-${j}" onclick="selectAnswer(${i},${j})">
+          <span class="opt-letter">${letters[j]}</span>
+          <span class="opt-text">${opt}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+// ─── SELECT ANSWER ────────────────────────────────────────────────────────────
+function selectAnswer(qi, oi) {
+  if (userAnswers[qi] !== -1 || _locked || _examDone) return;
+  userAnswers[qi] = oi;
+
+  // Lock all options for this question
+  const optsDiv = document.getElementById(`opts-${qi}`);
+  const opts = optsDiv.querySelectorAll('.opt');
+  opts.forEach((el, j) => {
+    el.classList.add('locked-opt');
+    el.onclick = null;
+    if (j === questions[qi].ans) el.classList.add('show-correct');
+    if (j === oi && oi !== questions[qi].ans) el.classList.add('selected-wrong');
+    if (j === oi && oi === questions[qi].ans) el.classList.add('selected-correct');
+  });
+
+  // Mark card as answered
+  document.getElementById(`qcard-${qi}`).classList.add('answered');
+  const badge = document.getElementById(`qnum-${qi}`);
+  badge.classList.add('answered-badge');
+
+  updateStats();
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function updateStats() {
+  const answered = userAnswers.filter(a => a !== -1).length;
+  const correct = userAnswers.filter((a, i) => a === questions[i].ans).length;
+  document.getElementById('statAnswered').textContent = answered;
+  document.getElementById('statRemaining').textContent = questions.length - answered;
+  document.getElementById('statScore').textContent = answered > 0 ? `${correct}/${answered}` : '—';
+  document.getElementById('progressBar').style.width = `${(answered/questions.length)*100}%`;
+  const hint = answered === questions.length
+    ? '✅ All questions answered — ready to submit!'
+    : `${questions.length - answered} question(s) remaining`;
+  document.getElementById('submitHint').textContent = hint;
+}
+
+// ─── TIMER ────────────────────────────────────────────────────────────────────
+function formatTime(s) {
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function startTimer() {
+  if (timerInterval) return;
+  timerInterval = setInterval(()=>{
+    if (_locked || _examDone) return;
+    timeLeft--;
+    const disp = document.getElementById('timerDisplay');
+    disp.textContent = formatTime(timeLeft);
+    if (timeLeft <= 60) { disp.className = 'danger'; }
+    else if (timeLeft <= 180) { disp.className = 'warn'; }
+    if (timeLeft <= 0) { clearInterval(timerInterval); submitExam(true); }
   }, 1000);
 }
-function clearIdleTimers() {
-  if (idleInterval) clearInterval(idleInterval);
-}
-function updateIdleBar() {
-  const pct = (idleSecondsLeft / IDLE_LIMIT) * 100;
-  const bar = document.getElementById('idleBar');
-  bar.style.width = pct + '%';
-  bar.style.background = idleSecondsLeft <= 6 ? '#ff3860' : '#00cfff';
-}
-function showIdleWarning() {
-  const w = document.getElementById('idleWarning');
-  w.style.display = 'block';
-  w.textContent = `⚠ Locking in ${idleSecondsLeft}s — Move mouse to stay active`;
-}
-function hideIdleWarning() {
-  document.getElementById('idleWarning').style.display = 'none';
-}
-document.addEventListener('mousemove', () => {
-  if (examStarted && document.getElementById('lockscreen').classList.contains('hidden')) resetIdle();
-});
-document.addEventListener('keydown', () => {
-  if (examStarted && document.getElementById('lockscreen').classList.contains('hidden')) resetIdle();
-});
 
-// ─── SAVE PDF ─────────────────────────────────────────────────────────────────
-function savePDF() {
-  // Pause lock during print only
-  examStarted = false;
-  clearIdleTimers();
+function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
-  document.getElementById('pdfStudentBlock').style.display = 'block';
-
-  setTimeout(() => {
-    window.print();
-
-    // After print dialog closes → lock the exam
-    setTimeout(() => {
-      document.getElementById('pdfStudentBlock').style.display = 'none';
-      examStarted = true;
-      lockExam('PDF saved — please verify with invigilator to continue');
-    }, 1500);
-  }, 100);
+// ─── SUBMIT ───────────────────────────────────────────────────────────────────
+function confirmSubmit() {
+  if (_locked || _examDone) return;
+  const unanswered = userAnswers.filter(a => a === -1).length;
+  if (unanswered > 0) {
+    const go = confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`);
+    if (!go) return;
+  }
+  submitExam(false);
 }
 
-// Also handle Ctrl+P
-window.addEventListener('beforeprint', () => {
-  examStarted = false;
-  clearIdleTimers();
-});
-window.addEventListener('afterprint', () => {
-  document.getElementById('pdfStudentBlock').style.display = 'none';
-  examStarted = true;
-  lockExam('PDF saved — please verify with invigilator to continue');
-});
+function submitExam(autoSubmit) {
+  _examDone = true;
+  stopTimer();
+  const elapsed = Math.round((Date.now() - startTime) / 1000);
+  const answered = userAnswers.filter(a => a !== -1).length;
+  const correct = userAnswers.filter((a,i) => a !== -1 && a === questions[i].ans).length;
+  const pct = Math.round((correct/questions.length)*100);
 
-// ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
-document.addEventListener('contextmenu', e => e.preventDefault());
+  let grade, gradeColor, msg;
+  if (pct >= 90) { grade='A+'; gradeColor='#39d353'; msg='Outstanding! You have demonstrated exceptional understanding of modern recon techniques and web security.'; }
+  else if (pct >= 80) { grade='A'; gradeColor='#39d353'; msg='Excellent work! You have a strong grasp of reconnaissance methodologies and vulnerability concepts.'; }
+  else if (pct >= 70) { grade='B'; gradeColor='#58a6ff'; msg='Good performance! You understand the core concepts. Review the missed topics to sharpen your skills.'; }
+  else if (pct >= 60) { grade='C'; gradeColor='#d29922'; msg='Average performance. Revisit the presentation materials focusing on missed areas.'; }
+  else { grade='F'; gradeColor='#f85149'; msg='Below passing threshold. We recommend a complete review of the Modern Recon Techniques material.'; }
+
+  const pass = pct >= 60;
+  const timeUsed = `${Math.floor(elapsed/60)}m ${elapsed%60}s`;
+
+  document.getElementById('certContent').innerHTML = `
+    <div class="cert-logo">${pass?'🏆':'📋'}</div>
+    <div class="cert-title-top">Certificate of Completion</div>
+    <div class="cert-title">Modern Recon Techniques</div>
+    <div class="cert-subtitle">Ethical Hacking & Web Security Assessment · ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</div>
+    <div class="score-circle ${pass?'':'fail'}">
+      <div class="score-big">${pct}%</div>
+      <div class="score-sub">${pass?'PASSED':'FAILED'}</div>
+    </div>
+    <div class="cert-grade" style="color:${gradeColor}">Grade: ${grade}</div>
+    <div class="cert-grid">
+      <div class="cert-stat"><div class="cv" style="color:var(--green)">${correct}</div><div class="cl">Correct</div></div>
+      <div class="cert-stat"><div class="cv" style="color:var(--red)">${answered - correct}</div><div class="cl">Wrong</div></div>
+      <div class="cert-stat"><div class="cv" style="color:var(--muted)">${questions.length - answered}</div><div class="cl">Skipped</div></div>
+    </div>
+    <div class="cert-grid">
+      <div class="cert-stat"><div class="cv">${questions.length}</div><div class="cl">Total Questions</div></div>
+      <div class="cert-stat"><div class="cv" style="color:var(--yellow)">${timeUsed}</div><div class="cl">Time Used</div></div>
+      <div class="cert-stat"><div class="cv" style="color:var(--blue)">${formatTime(timeLeft)}</div><div class="cl">Time Remaining</div></div>
+    </div>
+    <div class="cert-msg">${msg}</div>
+    ${autoSubmit ? '<p style="color:var(--red);font-size:13px;margin-bottom:16px">⏰ Exam auto-submitted when time expired.</p>' : ''}
+    <button class="print-btn" onclick="window.print()">🖨️ Print Certificate</button>
+    <div class="cert-footer">
+      Topic Coverage: ASN & IP Discovery · Infrastructure Discovery · Cloud Recon · Subdomain Enumeration ·<br>
+      Visual Prioritization · Web App Analysis · CSRF · Open Redirect · SQL Injection<br><br>
+      Presented by: Modern Recon Techniques — Jason Haddix<br>
+      Assessment Date: ${new Date().toISOString().split('T')[0]}
+    </div>
+  `;
+
+  document.getElementById('certModal').classList.add('show');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderQuestions();
+updateStats();
+// Start exam immediately — no password on load
+startTime = Date.now();
+startTimer();
 </script>
 </body>
 </html>
