@@ -234,6 +234,7 @@ setInterval(()=>{
 function lock(reason) {
   if (_examDone) return;
   _locked = true;
+  saveState();
   document.getElementById('lockScreen').classList.remove('hidden');
   document.getElementById('lockPwdInput').value = '';
   document.getElementById('lockError').style.display = 'none';
@@ -247,6 +248,7 @@ function tryUnlock() {
     _lastActivity = Date.now();
     document.getElementById('lockScreen').classList.add('hidden');
     document.getElementById('lockError').style.display = 'none';
+    saveState();
     if (!_examDone) startTimer();
   } else {
     document.getElementById('lockError').style.display = 'block';
@@ -429,7 +431,7 @@ const questions = [
 // ─── PERSISTENCE ─────────────────────────────────────────────────────────────
 const STORE_KEY = 'reconExamState_v1';
 function saveState() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify({userAnswers,timeLeft,startTime,_examDone})); } catch(e){}
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({userAnswers,timeLeft,startTime,_examDone,_locked})); } catch(e){}
 }
 function loadState() {
   try { const r=localStorage.getItem(STORE_KEY); return r?JSON.parse(r):null; } catch(e){return null;}
@@ -676,13 +678,17 @@ if (_saved) {
   timeLeft = Math.max(0, _saved.timeLeft);
   startTime = _saved.startTime;
   _examDone = _saved._examDone || false;
+  _locked = _saved._locked || false;
 
   restoreAnswers(_saved);
   updateStats();
 
   if (_examDone) {
-    // Re-run submitExam UI without resetting state
     submitExam(false);
+  } else if (_locked) {
+    // Was locked before refresh — show lock screen, don't start timer
+    document.getElementById('lockScreen').classList.remove('hidden');
+    document.getElementById('timerDisplay').textContent = formatTime(timeLeft);
   } else {
     document.getElementById('timerDisplay').textContent = formatTime(timeLeft);
     startTimer();
