@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Modern Recon Techniques — Secure MCQ Exam</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   :root{
@@ -101,6 +102,10 @@
   .cert-footer{font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:20px;margin-top:20px;line-height:1.8}
   .print-btn{padding:12px 32px;border-radius:10px;border:none;background:var(--green);color:#000;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
   .print-btn:hover{opacity:.85}
+  .screenshot-btn{padding:12px 32px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s}
+  .screenshot-btn:hover{opacity:.85}
+  .screenshot-btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:8px}
 
   /* SECTION DIVIDER */
   .section-divider{display:flex;align-items:center;gap:16px;margin:32px 0 24px}
@@ -574,7 +579,10 @@ function submitExam(autoSubmit) {
     </div>
     <div class="cert-msg">${msg}</div>
     ${autoSubmit ? '<p style="color:var(--red);font-size:13px;margin-bottom:16px">⏰ Exam auto-submitted when time expired.</p>' : ''}
-    <button class="print-btn" onclick="window.print()">🖨️ Print Certificate</button>
+    <div class="btn-row">
+      <button class="print-btn" onclick="window.print()">🖨️ Print Certificate</button>
+      <button class="screenshot-btn" id="ssBtn" onclick="screenshotCert()">📸 Download Screenshot</button>
+    </div>
     <div class="cert-footer">
       Topic Coverage: ASN & IP Discovery · Infrastructure Discovery · Cloud Recon · Subdomain Enumeration ·<br>
       Visual Prioritization · Web App Analysis · CSRF · Open Redirect · SQL Injection<br><br>
@@ -584,6 +592,45 @@ function submitExam(autoSubmit) {
   `;
 
   document.getElementById('certModal').classList.add('show');
+}
+
+// ─── SCREENSHOT CERTIFICATE ──────────────────────────────────────────────────
+function screenshotCert() {
+  const btn = document.getElementById('ssBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Capturing...';
+
+  const target = document.getElementById('certContent');
+
+  html2canvas(target, {
+    backgroundColor: '#1f2937',
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    onclone: (clonedDoc) => {
+      // Ensure cloned doc has dark background styles
+      const el = clonedDoc.getElementById('certContent');
+      if (el) {
+        el.style.background = '#1f2937';
+        el.style.color = '#e6edf3';
+        el.style.padding = '48px';
+        el.style.borderRadius = '0';
+      }
+    }
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = `recon-exam-certificate-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    btn.disabled = false;
+    btn.textContent = '✅ Downloaded!';
+    setTimeout(() => { btn.textContent = '📸 Download Screenshot'; }, 3000);
+  }).catch(err => {
+    console.error(err);
+    btn.disabled = false;
+    btn.textContent = '❌ Failed — Try Again';
+    setTimeout(() => { btn.textContent = '📸 Download Screenshot'; }, 3000);
+  });
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
